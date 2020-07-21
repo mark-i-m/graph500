@@ -30,6 +30,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <unistd.h>
 
 int isisolated(int64_t v);
 static int compare_doubles(const void* a, const void* b) {
@@ -87,7 +88,7 @@ int main(int argc, char** argv) {
 	const char* filename = getenv("TMPFILE");
 #ifdef SSSP
 	int wmode;
-	char *wfilename=NULL;  
+	char *wfilename=NULL;
 	if(filename!=NULL) {
 		wfilename=malloc(strlen(filename)+9);
 		wfilename[0]='\0';strcat(wfilename,filename);strcat(wfilename,".weights");
@@ -150,7 +151,7 @@ int main(int argc, char** argv) {
 		if (!is_opened) {
 			MPI_File_open(MPI_COMM_WORLD, (char*)wfilename, wmode, MPI_INFO_NULL, &tg.weightfile);
 			MPI_File_set_size(tg.weightfile, tg.nglobaledges * sizeof(float));
-		}    
+		}
 		MPI_File_set_view(tg.weightfile, 0, MPI_FLOAT, MPI_FLOAT, "native", MPI_INFO_NULL);
 		MPI_File_set_atomicity(tg.weightfile, 0);
 #endif
@@ -336,6 +337,30 @@ int main(int argc, char** argv) {
 	 * used directly. */
 	double* edge_counts = (double*)xmalloc(num_bfs_roots * sizeof(double));
 
+	// markm: synchronize with the instrumentation process here.
+	const char *TOUCHFILE = "/tmp/graph500-ready";
+	const char *WAITFILE = "/tmp/instrumentation-ready";
+
+	FILE *fp = fopen(TOUCHFILE, "w");
+	if (fp != NULL) {
+		fprintf(stdout, "Touched touchfile.\n");
+		fclose(fp);
+	} else {
+		fprintf(stdout, "Unable to touch touchfile.\n");
+		exit(1);
+	}
+
+	fp = fopen(WAITFILE, "r");
+	while (fp == NULL) {
+		perror(NULL);
+		fprintf(stdout, "Waiting...\n");
+		sleep(1);
+		fp = fopen(WAITFILE, "r");
+	}
+	fclose(fp);
+
+	fprintf(stdout, "Proceeding...\n");
+
 	/* Run BFS. */
 	int validation_passed = 1;
 	double* bfs_times = (double*)xmalloc(num_bfs_roots * sizeof(double));
@@ -472,7 +497,7 @@ int main(int argc, char** argv) {
 		MPI_File_close(&tg.edgefile);
 #ifdef SSSP
 		MPI_File_close(&tg.weightfile);
-#endif    
+#endif
 	} else {
 		free(tg.edgememory); tg.edgememory = NULL;
 #ifdef SSSP
