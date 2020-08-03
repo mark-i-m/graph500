@@ -37,7 +37,7 @@ int64_t visited_size;
 
 //global variables of CSR graph to be used inside of AM-handlers
 int64_t *column;
-int64_t *pred_glob;
+vertex_label_t *pred_glob;
 unsigned int * rowstarts;
 
 oned_csr_graph g;
@@ -77,7 +77,7 @@ void make_graph_data_structure(const tuple_graph* const tg) {
 	visited = xmalloc(visited_size*sizeof(unsigned long));
 }
 
-void run_bfs(int64_t root, int64_t* pred) {
+void run_bfs(vertex_label_t root, vertex_label_t* pred) {
 	int64_t nvisited;
 	long sum;
 	unsigned int i,j;
@@ -144,7 +144,7 @@ void get_edge_count_for_teps(int64_t* edge_visit_count) {
 	*edge_visit_count=edge_count;
 }
 
-void clean_pred(int64_t* pred) {
+void clean_pred(vertex_label_t* pred) {
 	int i;
 	for(i=0;i<g.nlocalverts;i++) pred[i]=-1;
 }

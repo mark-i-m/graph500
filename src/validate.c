@@ -46,7 +46,8 @@ int64_t *vcolumn;
 #ifdef SSSP
 float* vweights;
 #endif
-int64_t *globpred,nedges_traversed;
+vertex_label_t *globpred;
+int64_t nedges_traversed;
 float *globdist,prevlevel;
 int64_t val_errors=0;
 int failedtovalidate=0;
@@ -56,13 +57,13 @@ int64_t maxvertex;
 
 void frompredhndl(int from,void* data,int sz) {
 	int vfrom = *(int*)data;
-	int64_t predfrom = VERTEX_TO_GLOBAL(from,vfrom);
+	vertex_label_t predfrom = VERTEX_TO_GLOBAL(from,vfrom);
 	int vloc = *(int*)(data+4);
 
 	if(globpred[vloc] == predfrom && globdist[vloc]==FLT_MAX) globdist[vloc]=prevlevel+1.0,newvisits++;
 }
 
-void send_frompred (int vfrom,int64_t src) {
+void send_frompred (int vfrom,vertex_label_t src) {
 	int pe=VERTEX_OWNER(src);
 	int vloc[2]={vfrom, VERTEX_LOCAL(src)};
 	aml_send(&vloc,1,8,pe);
@@ -103,7 +104,7 @@ void vsend_full_edge (int64_t src,int64_t tgt,float w) {
 typedef struct edgedist {
 	unsigned int vfrom;
 	unsigned int vloc;
-	int64_t predfrom;
+	vertex_label_t predfrom;
 	float distfrom;
 #ifdef SSSP
 	float w;
@@ -119,7 +120,7 @@ void sendedgepreddist(unsigned vloc,unsigned int vedge) {
 	aml_send(&m,1,sizeof(edgedist),VERTEX_OWNER(COLUMN(vedge)));
 }
 
-#define DUMPERROR(text) { printf("Validation Error: %s, edge %ld %ld weight %f pred0 %ld pred1 %ld dist0 %f dist1 %f\n",text,v0,v1,w,predv0,predv1,distv0,distv1); val_errors++; return; }
+#define DUMPERROR(text) { printf("Validation Error: %s, edge %lu %lu weight %f pred0 %lu pred1 %lu dist0 %f dist1 %f\n",text,v0,v1,w,predv0,predv1,distv0,distv1); val_errors++; return; }
 
 //main validation handler: tracks all edges and at delivery has both vertex preds and distances to be checked
 void edgepreddisthndl(int frompe,void* data,int sz) {
@@ -127,10 +128,10 @@ void edgepreddisthndl(int frompe,void* data,int sz) {
 
 	unsigned int v1loc = m->vloc;
 
-	int64_t v1 = VERTEX_TO_GLOBAL(my_pe(),v1loc);
-	int64_t v0 = VERTEX_TO_GLOBAL(frompe,m->vfrom);
-	int64_t predv1 = globpred[v1loc];
-	int64_t predv0 = m->predfrom;
+	vertex_label_t v1 = VERTEX_TO_GLOBAL(my_pe(),v1loc);
+	vertex_label_t v0 = VERTEX_TO_GLOBAL(frompe,m->vfrom);
+	vertex_label_t predv1 = globpred[v1loc];
+	vertex_label_t predv0 = m->predfrom;
 #ifdef SSSP
 	float w = (validatingbfs?1.0:m->w);
 #else
@@ -146,7 +147,7 @@ void edgepreddisthndl(int frompe,void* data,int sz) {
 	if(distv0+w < distv1 || distv1+w<distv0) DUMPERROR("triangle rule violated");
 }
 
-void makedepthmapforbfs(const size_t nlocalverts,const int64_t root,int64_t * const pred,float* dist) {
+void makedepthmapforbfs(const size_t nlocalverts,const vertex_label_t root,vertex_label_t * const pred,float* dist) {
 
 	int i,j;
 	for(i=0;i<nlocalverts;i++) {
@@ -176,7 +177,10 @@ void makedepthmapforbfs(const size_t nlocalverts,const int64_t root,int64_t * co
 	}
 }
 
-int validate_result(int isbfs,const tuple_graph* const tg, const size_t nlocalverts, const int64_t root, int64_t* const pred, float* dist,int64_t *nedges_in) {
+int validate_result(int isbfs,const tuple_graph* const tg, const size_t nlocalverts,
+		const vertex_label_t root, vertex_label_t* const pred, float* dist,
+		int64_t *nedges_in)
+{
 	validatingbfs=isbfs;
 
 	//if(failedtovalidate) return 0; //failed to allocate lots of memory for validation: skipping all validation now
@@ -200,8 +204,8 @@ vweights=weights;
 		ITERATE_TUPLE_GRAPH_BEGIN(tg, buf, bufsize,wbuf) {
 			ptrdiff_t j;
 			for (j = 0; j < bufsize; ++j) {
-				int64_t v0 = get_v0_from_edge(&buf[j]);
-				int64_t v1 = get_v1_from_edge(&buf[j]);
+				vertex_label_t v0 = get_v0_from_edge(&buf[j]);
+				vertex_label_t v1 = get_v1_from_edge(&buf[j]);
 				if(v0==v1) continue;
 				send_half(v0);
 				send_half(v1);
@@ -226,8 +230,8 @@ vweights=weights;
 		ITERATE_TUPLE_GRAPH_BEGIN(tg, buf, bufsize,wbuf) {
 			ptrdiff_t j;
 			for (j = 0; j < bufsize; ++j) {
-				int64_t v0 = get_v0_from_edge(&buf[j]);
-				int64_t v1 = get_v1_from_edge(&buf[j]);
+				vertex_label_t v0 = get_v0_from_edge(&buf[j]);
+				vertex_label_t v1 = get_v1_from_edge(&buf[j]);
 				if(v0==v1) continue;
 #ifdef SSSP
 				vsend_full_edge(v0, v1,wbuf[j]);
@@ -257,7 +261,7 @@ vweights=weights;
 
 	for (i = 0; i < nlocalverts; ++i)
 		if((pred[i]!=-1 && pred[i]<0) || pred[i]>maxvertex)
-		printf("Validation Error: predecessor %ld of vertex %ld is out of range\n",pred[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
+		printf("Validation Error: predecessor %lu of vertex %lu is out of range\n",pred[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
 	aml_long_allsum(&val_errors);
 	if(val_errors>0) return 0;
 
@@ -266,15 +270,15 @@ vweights=weights;
 
 	for (i = 0; i < nlocalverts; ++i) {
 		if(dist[i]!=-1.0 && dist[i]<0.0)
-		printf("Validation Error: distance/depth %3.2f of vertex %ld is out of range\n",dist[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
+		printf("Validation Error: distance/depth %3.2f of vertex %lu is out of range\n",dist[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
 		if((pred[i]==-1 && dist[i]!=-1.0) || (pred[i]!=-1 && dist[i]==-1.0))
-		printf("Validation Error: vertex %ld has inconsistent predecessor %ld and distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
+		printf("Validation Error: vertex %lu has inconsistent predecessor %lu and distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
 	}
 
 	if(my_pe()==VERTEX_OWNER(root)) {
 		int vloc = VERTEX_LOCAL(root);
 		if(pred[vloc]!=root || dist[vloc]!=0.0)
-		printf("Validation Error: root vertex %ld has predecessor %ld and distance %f\n",root,pred[vloc],dist[vloc]),val_errors++;
+		printf("Validation Error: root vertex %lu has predecessor %lu and distance %f\n",root,pred[vloc],dist[vloc]),val_errors++;
 		else confirmed[vloc]=1;
 	}
 
@@ -288,11 +292,11 @@ vweights=weights;
 
 	for (i = 0; i < nlocalverts; ++i)
 		if(confirmed[i]==0 && pred[i]!=-1)
-		printf("Validation Error: path to vertex %ld not confirmed from predecessor %ld with distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
+		printf("Validation Error: path to vertex %lu not confirmed from predecessor %lu with distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
 
 	aml_long_allsum(&val_errors);
 	aml_long_allsum(&nedges_traversed);
 	if(nedges_in!=NULL && *nedges_in!=nedges_traversed)
-	printf("Validation Error: wrong nedge_traversed %lu (correct number is %lu)\n",*nedges_in,nedges_traversed),val_errors++;
+	printf("Validation Error: wrong nedge_traversed %ld (correct number is %ld)\n",*nedges_in,nedges_traversed),val_errors++;
 	if(val_errors>0) return 0; else return 1;
 }

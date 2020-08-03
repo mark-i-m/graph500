@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+typedef uint64_t vertex_label_t;
+
 #ifdef GENERATOR_USE_PACKED_EDGE_TYPE
 
 typedef struct packed_edge {
@@ -32,15 +34,15 @@ typedef struct packed_edge {
   uint32_t high; /* v1 in high half, v0 in low half */
 } packed_edge;
 
-static inline int64_t get_v0_from_edge(const packed_edge* p) {
+static inline vertex_label_t get_v0_from_edge(const packed_edge* p) {
   return (p->v0_low | ((int64_t)((int16_t)(p->high & 0xFFFF)) << 32));
 }
 
-static inline int64_t get_v1_from_edge(const packed_edge* p) {
+static inline vertex_label_t get_v1_from_edge(const packed_edge* p) {
   return (p->v1_low | ((int64_t)((int16_t)(p->high >> 16)) << 32));
 }
 
-static inline void write_edge(packed_edge* p, int64_t v0, int64_t v1) {
+static inline void write_edge(packed_edge* p, vertex_label_t v0, vertex_label_t v1) {
   p->v0_low = (uint32_t)v0;
   p->v1_low = (uint32_t)v1;
   p->high = (uint32_t)(((v0 >> 32) & 0xFFFF) | (((v1 >> 32) & 0xFFFF) << 16));
@@ -49,19 +51,19 @@ static inline void write_edge(packed_edge* p, int64_t v0, int64_t v1) {
 #else
 
 typedef struct packed_edge {
-  int64_t v0;
-  int64_t v1;
+  vertex_label_t v0;
+  vertex_label_t v1;
 } packed_edge;
 
-static inline int64_t get_v0_from_edge(const packed_edge* p) {
+static inline vertex_label_t get_v0_from_edge(const packed_edge* p) {
   return p->v0;
 }
 
-static inline int64_t get_v1_from_edge(const packed_edge* p) {
+static inline vertex_label_t get_v1_from_edge(const packed_edge* p) {
   return p->v1;
 }
 
-static inline void write_edge(packed_edge* p, int64_t v0, int64_t v1) {
+static inline void write_edge(packed_edge* p, vertex_label_t v0, vertex_label_t v1) {
   p->v0 = v0;
   p->v1 = v1;
 }

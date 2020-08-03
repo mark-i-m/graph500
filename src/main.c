@@ -364,7 +364,7 @@ int main(int argc, char** argv) {
 	double* bfs_times = (double*)xmalloc(num_bfs_roots * sizeof(double));
 	double* validate_times = (double*)xmalloc(num_bfs_roots * sizeof(double));
 	uint64_t nlocalverts = get_nlocalverts_for_pred();
-	int64_t* pred = (int64_t*)xMPI_Alloc_mem(nlocalverts * sizeof(int64_t));
+	vertex_label_t* pred = (vertex_label_t*)xMPI_Alloc_mem(nlocalverts * sizeof(vertex_label_t));
 	float* shortest = (float*)xMPI_Alloc_mem(nlocalverts * sizeof(float));
 
 

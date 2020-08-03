@@ -222,19 +222,22 @@ typedef struct tuple_graph {
 						void* xmalloc(size_t nbytes); /* In utils.c */
 						void* xcalloc(size_t n, size_t unit); /* In utils.c */
 
-						int validate_result(int isbfs, const tuple_graph* const tg, const size_t nlocalverts, const int64_t root, int64_t* const pred, float * dist, int64_t* const edge_visit_count_ptr); /* In validate.c */
+						int validate_result(int isbfs, const tuple_graph* const tg,
+								const size_t nlocalverts, const vertex_label_t root,
+								vertex_label_t* const pred, float * dist,
+								int64_t* const edge_visit_count_ptr); /* In validate.c */
 
 						/* Definitions in each BFS file, using static global variables for internal
 						 * storage: */
 						void make_graph_data_structure(const tuple_graph* const tg);
 						void free_graph_data_structure(void);
-						void run_bfs(int64_t root, int64_t* pred);
+						void run_bfs(vertex_label_t root, vertex_label_t* pred);
 						void get_edge_count_for_teps(int64_t* edge_visit_count);
-						void clean_pred(int64_t* pred);
+						void clean_pred(vertex_label_t* pred);
 						size_t get_nlocalverts_for_pred(void);
 						/* Definitions in SSSP file in case this kernel is implemented */
 #ifdef SSSP
-						void run_sssp(int64_t root, int64_t* pred, float * dist_shortest);
+						void run_sssp(vertex_label_t root, vertex_label_t* pred, float * dist_shortest);
 						void clean_shortest(float * dist);
 #endif
 

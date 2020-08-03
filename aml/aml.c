@@ -127,8 +127,8 @@ ushort *nbuf; //actual buffer for each group/localcore
 ushort activebuf[NSEND];// N_buffer used in transfer(0..NSEND{_intra}-1)
 MPI_Request rqsend[NSEND];
 // MPI stuff for recv
-static char recvbuf[AGGR*NRECV];
-static MPI_Request rqrecv[NRECV];
+char recvbuf[AGGR*NRECV];
+MPI_Request rqrecv[NRECV];
 
 unsigned long long nbytes_sent,nbytes_rcvd;
 

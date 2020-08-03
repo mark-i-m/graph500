@@ -24,7 +24,8 @@ extern oned_csr_graph g;
 extern int qc,q2c;
 extern int* q1,*q2;
 extern int* rowstarts;
-extern int64_t* column,*pred_glob,visited_size;
+extern int64_t* column, visited_size;
+extern vertex_label_t *pred_glob;
 extern unsigned long * visited;
 #ifdef SSSP
 //global variables as those accesed by active message handler
@@ -67,7 +68,7 @@ void send_relax(int64_t glob, float weight,int fromloc) {
 	aml_send(&m,1,sizeof(relaxmsg),VERTEX_OWNER(glob));
 }
 
-void run_sssp(int64_t root,int64_t* pred,float *dist) {
+void run_sssp(vertex_label_t root, vertex_label_t* pred, float *dist) {
 
 	unsigned int i,j;
 	long sum=0;
