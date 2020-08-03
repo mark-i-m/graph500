@@ -55,6 +55,8 @@ uint64_t newvisits;
 int * confirmed=NULL;
 uint64_t maxvertex;
 
+#define NOPRED ((vertex_label_t)(-1))
+
 void frompredhndl(int from,void* data,int sz) {
 	int vfrom = *(int*)data;
 	vertex_label_t predfrom = VERTEX_TO_GLOBAL(from,vfrom);
@@ -139,9 +141,9 @@ void edgepreddisthndl(int frompe,void* data,int sz) {
 #endif
 	float distv0 = m->distfrom;
 	float distv1 = globdist[v1loc];
-	if(predv0==-1 && predv1==-1) return; else if(v0<v1) nedges_traversed++;
+	if(predv0==NOPRED && predv1==NOPRED) return; else if(v0<v1) nedges_traversed++;
 
-	if((predv0==-1 && predv1!=-1) || (predv1==-1 && predv0!=-1)) DUMPERROR("edge connecting visited and unvisited vertices");
+	if((predv0==NOPRED && predv1!=NOPRED) || (predv1==NOPRED && predv0!=NOPRED)) DUMPERROR("edge connecting visited and unvisited vertices");
 	if(predv1==v0 && distv1 == distv0+w) confirmed[v1loc]=1; //confirm pred/dist as existing edge
 
 	if(distv0+w < distv1 || distv1+w<distv0) DUMPERROR("triangle rule violated");
@@ -152,7 +154,7 @@ void makedepthmapforbfs(const size_t nlocalverts,const vertex_label_t root,verte
 	int i,j;
 	for(i=0;i<nlocalverts;i++) {
 		dist[i]=FLT_MAX; //at the end there should be no FLT_MAX left
-		if(pred[i]==-1) dist[i]=-1.0;
+		if(pred[i]==NOPRED) dist[i]=-1.0;
 		if(pred[i]==root) dist[i]=1.0;
 	}
 
@@ -260,7 +262,7 @@ vweights=weights;
 		confirmed[i]=0;
 
 	for (i = 0; i < nlocalverts; ++i)
-		if((pred[i]!=-1 && pred[i]<0) || pred[i]>maxvertex)
+		if(pred[i]!=NOPRED && pred[i]>maxvertex)
 		printf("Validation Error: predecessor %lu of vertex %lu is out of range\n",pred[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
 	aml_long_allsum(&val_errors);
 	if(val_errors>0) return 0;
@@ -271,7 +273,7 @@ vweights=weights;
 	for (i = 0; i < nlocalverts; ++i) {
 		if(dist[i]!=-1.0 && dist[i]<0.0)
 		printf("Validation Error: distance/depth %3.2f of vertex %lu is out of range\n",dist[i],VERTEX_TO_GLOBAL(my_pe(),i)),val_errors++;
-		if((pred[i]==-1 && dist[i]!=-1.0) || (pred[i]!=-1 && dist[i]==-1.0))
+		if((pred[i]==NOPRED && dist[i]!=-1.0) || (pred[i]!=NOPRED && dist[i]==-1.0))
 		printf("Validation Error: vertex %lu has inconsistent predecessor %lu and distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
 	}
 
@@ -291,7 +293,7 @@ vweights=weights;
 	aml_barrier();
 
 	for (i = 0; i < nlocalverts; ++i)
-		if(confirmed[i]==0 && pred[i]!=-1)
+		if(confirmed[i]==0 && pred[i]!=NOPRED)
 		printf("Validation Error: path to vertex %lu not confirmed from predecessor %lu with distance %f\n",VERTEX_TO_GLOBAL(my_pe(),i),pred[i],dist[i]),val_errors++;
 
 	aml_long_allsum(&val_errors);
