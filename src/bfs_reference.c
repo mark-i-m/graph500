@@ -24,7 +24,7 @@
 #include <stdint.h>
 
 #ifdef DEBUGSTATS
-extern int64_t nbytes_sent,nbytes_rcvd;
+extern uint64_t nbytes_sent,nbytes_rcvd;
 #endif
 // two arrays holding visited VERTEX_LOCALs for current and next level
 // we swap pointers each time
@@ -33,10 +33,10 @@ int qc,q2c; //pointer to first free element
 
 //VISITED bitmap parameters
 unsigned long *visited;
-int64_t visited_size;
+uint64_t visited_size;
 
 //global variables of CSR graph to be used inside of AM-handlers
-int64_t *column;
+uint64_t *column;
 vertex_label_t *pred_glob;
 unsigned int * rowstarts;
 
@@ -58,7 +58,7 @@ void visithndl(int from,void* data,int sz) {
 	}
 }
 
-inline void send_visit(int64_t glob, int from) {
+inline void send_visit(uint64_t glob, int from) {
 	visitmsg m = {VERTEX_LOCAL(glob),from};
 	aml_send(&m,1,sizeof(visitmsg),VERTEX_OWNER(glob));
 }
@@ -78,7 +78,7 @@ void make_graph_data_structure(const tuple_graph* const tg) {
 }
 
 void run_bfs(vertex_label_t root, vertex_label_t* pred) {
-	int64_t nvisited;
+	uint64_t nvisited;
 	long sum;
 	unsigned int i,j;
 #ifdef DEBUGSTATS
@@ -129,7 +129,7 @@ void run_bfs(vertex_label_t root, vertex_label_t* pred) {
 }
 
 //we need edge count to calculate teps. Validation will check if this count is correct
-void get_edge_count_for_teps(int64_t* edge_visit_count) {
+void get_edge_count_for_teps(uint64_t* edge_visit_count) {
 	long i,j;
 	long edge_count=0;
 	for(i=0;i<g.nlocalverts;i++)

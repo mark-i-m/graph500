@@ -32,7 +32,7 @@
 #include <inttypes.h>
 #include <unistd.h>
 
-int isisolated(int64_t v);
+int isisolated(uint64_t v);
 static int compare_doubles(const void* a, const void* b) {
 	double aa = *(const double*)a;
 	double bb = *(const double*)b;
@@ -98,8 +98,8 @@ int main(int argc, char** argv) {
 	/* If filename is NULL, store data in memory */
 
 	tuple_graph tg;
-	tg.nglobaledges = (int64_t)(edgefactor) << SCALE;
-	int64_t nglobalverts = (int64_t)(1) << SCALE;
+	tg.nglobaledges = (uint64_t)(edgefactor) << SCALE;
+	uint64_t nglobalverts = (uint64_t)(1) << SCALE;
 
 	tg.data_in_file = (filename != NULL);
 	tg.write_file = 1;
@@ -163,7 +163,7 @@ int main(int argc, char** argv) {
 	/* Get roots for BFS runs, plus maximum vertex with non-zero degree (used by
 	 * validator). */
 	int num_bfs_roots = 64;
-	int64_t* bfs_roots = (int64_t*)xmalloc(num_bfs_roots * sizeof(int64_t));
+	uint64_t* bfs_roots = (uint64_t*)xmalloc(num_bfs_roots * sizeof(uint64_t));
 
 	double make_graph_start = MPI_Wtime();
 	if( !tg.data_in_file || tg.write_file )
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
 		 * non-local communication and reading the file separately just to find BFS
 		 * roots. */
 		MPI_Offset nchunks_in_file = (tg.nglobaledges + FILE_CHUNKSIZE - 1) / FILE_CHUNKSIZE;
-		int64_t bitmap_size_in_bytes = int64_min(BITMAPSIZE, (nglobalverts + CHAR_BIT - 1) / CHAR_BIT);
+		uint64_t bitmap_size_in_bytes = int64_min(BITMAPSIZE, (nglobalverts + CHAR_BIT - 1) / CHAR_BIT);
 		if (bitmap_size_in_bytes * size * CHAR_BIT < nglobalverts) {
 			bitmap_size_in_bytes = (nglobalverts + size * CHAR_BIT - 1) / (size * CHAR_BIT);
 		}
@@ -210,20 +210,20 @@ int main(int argc, char** argv) {
 			float* wbuf = (float*)xmalloc(FILE_CHUNKSIZE*sizeof(float));
 #endif
 			MPI_Offset block_limit = (nchunks_in_file + nrows - 1) / nrows;
-			/* fprintf(stderr, "%d: nchunks_in_file = %" PRId64 ", block_limit = %" PRId64 " in grid of %d rows, %d cols\n", rank, (int64_t)nchunks_in_file, (int64_t)block_limit, nrows, ranks_per_row); */
+			/* fprintf(stderr, "%d: nchunks_in_file = %" PRId64 ", block_limit = %" PRId64 " in grid of %d rows, %d cols\n", rank, (uint64_t)nchunks_in_file, (uint64_t)block_limit, nrows, ranks_per_row); */
 			if (tg.data_in_file) {
 				tg.edgememory_size = 0;
 				tg.edgememory = NULL;
 			} else {
 				int my_pos = my_row + my_col * nrows;
-				int last_pos = (tg.nglobaledges % ((int64_t)FILE_CHUNKSIZE * nrows * ranks_per_row) != 0) ?
+				int last_pos = (tg.nglobaledges % ((uint64_t)FILE_CHUNKSIZE * nrows * ranks_per_row) != 0) ?
 					(tg.nglobaledges / FILE_CHUNKSIZE) % (nrows * ranks_per_row) :
 					-1;
-				int64_t edges_left = tg.nglobaledges % FILE_CHUNKSIZE;
-				int64_t nedges = FILE_CHUNKSIZE * (tg.nglobaledges / ((int64_t)FILE_CHUNKSIZE * nrows * ranks_per_row)) +
+				uint64_t edges_left = tg.nglobaledges % FILE_CHUNKSIZE;
+				uint64_t nedges = FILE_CHUNKSIZE * (tg.nglobaledges / ((uint64_t)FILE_CHUNKSIZE * nrows * ranks_per_row)) +
 					FILE_CHUNKSIZE * (my_pos < (tg.nglobaledges / FILE_CHUNKSIZE) % (nrows * ranks_per_row)) +
 					(my_pos == last_pos ? edges_left : 0);
-				/* fprintf(stderr, "%d: nedges = %" PRId64 " of %" PRId64 "\n", rank, (int64_t)nedges, (int64_t)tg.nglobaledges); */
+				/* fprintf(stderr, "%d: nedges = %" PRId64 " of %" PRId64 "\n", rank, (uint64_t)nedges, (uint64_t)tg.nglobaledges); */
 				tg.edgememory_size = nedges;
 				tg.edgememory = (packed_edge*)xmalloc(nedges * sizeof(packed_edge));
 #ifdef SSSP
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
 					tg.weightmemory + FILE_CHUNKSIZE * (block_idx / ranks_per_row) :
 					wbuf;
 #endif
-				/* fprintf(stderr, "%d: My range is [%" PRId64 ", %" PRId64 ") %swriting into index %" PRId64 "\n", rank, (int64_t)start_edge_index, (int64_t)(start_edge_index + edge_count), (my_col == (block_idx % ranks_per_row)) ? "" : "not ", (int64_t)(FILE_CHUNKSIZE * (block_idx / ranks_per_row))); */
+				/* fprintf(stderr, "%d: My range is [%" PRId64 ", %" PRId64 ") %swriting into index %" PRId64 "\n", rank, (uint64_t)start_edge_index, (uint64_t)(start_edge_index + edge_count), (my_col == (block_idx % ranks_per_row)) ? "" : "not ", (uint64_t)(FILE_CHUNKSIZE * (block_idx / ranks_per_row))); */
 				if (!tg.data_in_file && block_idx % ranks_per_row == my_col) {
 					assert (FILE_CHUNKSIZE * (block_idx / ranks_per_row) + edge_count <= tg.edgememory_size);
 				}
@@ -305,11 +305,11 @@ int main(int argc, char** argv) {
 		uint64_t counter = 0;
 		int bfs_root_idx;
 		for (bfs_root_idx = 0; bfs_root_idx < num_bfs_roots; ++bfs_root_idx) {
-			int64_t root;
+			uint64_t root;
 			while (1) {
 				double d[2];
 				make_random_numbers(2, seed1, seed2, counter, d);
-				root = (int64_t)((d[0] + d[1]) * nglobalverts) % nglobalverts;
+				root = (uint64_t)((d[0] + d[1]) * nglobalverts) % nglobalverts;
 				counter += 2;
 				if (counter > 2 * nglobalverts) break;
 				int is_duplicate = 0;
@@ -387,7 +387,7 @@ int main(int argc, char** argv) {
 		}
 
 		for (bfs_root_idx = 0; bfs_root_idx < num_bfs_roots; ++bfs_root_idx) {
-			int64_t root = bfs_roots[bfs_root_idx];
+			uint64_t root = bfs_roots[bfs_root_idx];
 
 			if (rank == 0) fprintf(stderr, "Running BFS %d\n", bfs_root_idx);
 
@@ -398,7 +398,7 @@ int main(int argc, char** argv) {
 			double bfs_stop = MPI_Wtime();
 			bfs_times[bfs_root_idx] = bfs_stop - bfs_start;
 			if (rank == 0) fprintf(stderr, "Time for BFS %d is %f\n", bfs_root_idx, bfs_times[bfs_root_idx]);
-			int64_t edge_visit_count=0;
+			uint64_t edge_visit_count=0;
 			get_edge_count_for_teps(&edge_visit_count);
 			edge_counts[bfs_root_idx] = (double)edge_visit_count;
 			if (rank == 0) fprintf(stderr, "TEPS for BFS %d is %g\n", bfs_root_idx, edge_visit_count / bfs_times[bfs_root_idx]);
@@ -443,7 +443,7 @@ int main(int argc, char** argv) {
 		if(!my_pe()) printf("finished energy loop SSSP\n");
 #endif
 	for (bfs_root_idx = 0; bfs_root_idx < num_bfs_roots; ++bfs_root_idx) {
-		int64_t root = bfs_roots[bfs_root_idx];
+		uint64_t root = bfs_roots[bfs_root_idx];
 
 		if (rank == 0) fprintf(stderr, "Running SSSP %d\n", bfs_root_idx);
 
@@ -455,7 +455,7 @@ int main(int argc, char** argv) {
 		run_sssp(root, &pred[0],shortest);
 		double sssp_stop = MPI_Wtime();
 		sssp_times[bfs_root_idx] = sssp_stop - sssp_start;
-		int64_t edge_visit_count=0;
+		uint64_t edge_visit_count=0;
 		get_edge_count_for_teps(&edge_visit_count);
 		edge_counts[bfs_root_idx] = (double)edge_visit_count;
 		if (rank == 0) fprintf(stderr, "Time for SSSP %d is %f\n", bfs_root_idx, sssp_times[bfs_root_idx]);

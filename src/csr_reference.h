@@ -14,12 +14,12 @@
 
 typedef struct oned_csr_graph {
 	size_t nlocalverts;
-	int64_t max_nlocalverts;
+	uint64_t max_nlocalverts;
 	size_t nlocaledges;
 	int lg_nglobalverts;
-	int64_t nglobalverts,notisolated;
+	uint64_t nglobalverts,notisolated;
 	unsigned int *rowstarts;
-	int64_t *column;
+	uint64_t *column;
 #ifdef SSSP 
 	float *weights;
 #endif
@@ -34,6 +34,6 @@ void free_oned_csr_graph(oned_csr_graph* const g);
 //#define SETCOLUMN(a,b) column[a]=b;
 #define BYTES_PER_VERTEX 6
 #define SETCOLUMN(a,b) memcpy(((char*)column)+(BYTES_PER_VERTEX*a),&b,BYTES_PER_VERTEX)
-#define COLUMN(i) (*(int64_t*)(((char*)column)+(BYTES_PER_VERTEX*i)) & (int64_t)(0xffffffffffffffffULL>>(64-8*BYTES_PER_VERTEX)))
+#define COLUMN(i) (*(uint64_t*)(((char*)column)+(BYTES_PER_VERTEX*i)) & (uint64_t)(0xffffffffffffffffULL>>(64-8*BYTES_PER_VERTEX)))
 
 #endif /* CSR_REFERENCE_H */

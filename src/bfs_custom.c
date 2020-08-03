@@ -15,9 +15,9 @@
 
 //VISITED bitmap parameters
 unsigned long *visited;
-int64_t visited_size;
+uint64_t visited_size;
 
-int64_t *pred_glob,*column;
+uint64_t *pred_glob,*column;
 int *rowstarts;
 oned_csr_graph g;
 
@@ -35,14 +35,14 @@ void make_graph_data_structure(const tuple_graph* const tg) {
 //user should provide this function which would be called several times to do kernel 2: breadth first search
 //pred[] should be root for root, -1 for unrechable vertices
 //prior to calling run_bfs pred is set to -1 by calling clean_pred
-void run_bfs(int64_t root, int64_t* pred) {
+void run_bfs(uint64_t root, uint64_t* pred) {
 	pred_glob=pred;
 	//user code to do bfs
 }
 
 //we need edge count to calculate teps. Validation will check if this count is correct
 //user should change this function if another format (not standart CRS) used
-void get_edge_count_for_teps(int64_t* edge_visit_count) {
+void get_edge_count_for_teps(uint64_t* edge_visit_count) {
 	long i,j;
 	long edge_count=0;
 	for(i=0;i<g.nlocalverts;i++)
@@ -56,7 +56,7 @@ void get_edge_count_for_teps(int64_t* edge_visit_count) {
 }
 
 //user provided function to initialize predecessor array to whatevere value user needs
-void clean_pred(int64_t* pred) {
+void clean_pred(uint64_t* pred) {
 	int i;
 	for(i=0;i<g.nlocalverts;i++) pred[i]=-1;
 }

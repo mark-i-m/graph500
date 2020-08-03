@@ -35,11 +35,11 @@ typedef struct packed_edge {
 } packed_edge;
 
 static inline vertex_label_t get_v0_from_edge(const packed_edge* p) {
-  return (p->v0_low | ((int64_t)((int16_t)(p->high & 0xFFFF)) << 32));
+  return (p->v0_low | ((uint64_t)((int16_t)(p->high & 0xFFFF)) << 32));
 }
 
 static inline vertex_label_t get_v1_from_edge(const packed_edge* p) {
-  return (p->v1_low | ((int64_t)((int16_t)(p->high >> 16)) << 32));
+  return (p->v1_low | ((uint64_t)((int16_t)(p->high >> 16)) << 32));
 }
 
 static inline void write_edge(packed_edge* p, vertex_label_t v0, vertex_label_t v1) {
@@ -77,7 +77,7 @@ static inline void write_edge(packed_edge* p, vertex_label_t v0, vertex_label_t 
 void generate_kronecker_range(
        const uint_fast32_t seed[5] /* All values in [0, 2^31 - 1) */,
        int logN /* In base 2 */,
-       int64_t start_edge, int64_t end_edge /* Indices (in [0, M)) for the edges to generate */,
+       uint64_t start_edge, uint64_t end_edge /* Indices (in [0, M)) for the edges to generate */,
        packed_edge* edges /* Size >= end_edge - start_edge */
 #ifdef SSSP
        ,float* weights

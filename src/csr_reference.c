@@ -22,14 +22,14 @@
 #include <assert.h>
 #include <search.h>
 
-int64_t nverts_known = 0;
+uint64_t nverts_known = 0;
 int *degrees;
-int64_t *column;
+uint64_t *column;
 float *weights;
 extern oned_csr_graph g; //from bfs_reference for isisolated function
 
 //this function is needed for roots generation
-int isisolated(int64_t v) {
+int isisolated(uint64_t v) {
 	if(my_pe()==VERTEX_OWNER(v)) return (g.rowstarts[VERTEX_LOCAL(v)]==g.rowstarts[VERTEX_LOCAL(v)+1]);
 	return 0; //locally no evidence, allreduce required
 }
@@ -39,7 +39,7 @@ void halfedgehndl(int from,void* data,int sz)
 
 void fulledgehndl(int frompe,void* data,int sz) {
 	int vloc = *(int*)data;
-	int64_t gtgt = *((int64_t*)(data+4));
+	uint64_t gtgt = *((uint64_t*)(data+4));
 	SETCOLUMN(degrees[vloc]++,gtgt);
 #ifdef SSSP
 	float w = ((float*)data)[3];
@@ -47,14 +47,14 @@ void fulledgehndl(int frompe,void* data,int sz) {
 #endif
 }
 
-void send_half_edge (int64_t src,int64_t tgt) {
+void send_half_edge (uint64_t src,uint64_t tgt) {
 	int pe=VERTEX_OWNER(src);
 	int vloc=VERTEX_LOCAL(src);
 	aml_send(&vloc,1,4,pe);
 	if(tgt>=nverts_known) nverts_known=tgt+1;
 }
 #ifdef SSSP
-void send_full_edge (int64_t src,int64_t tgt,float w) {
+void send_full_edge (uint64_t src,uint64_t tgt,float w) {
 	int pe=VERTEX_OWNER(src);
 	int vloc[4];
 	vloc[0]=VERTEX_LOCAL(src);
@@ -63,7 +63,7 @@ void send_full_edge (int64_t src,int64_t tgt,float w) {
 	aml_send(vloc,1,16,pe);
 }
 #else
-void send_full_edge (int64_t src,int64_t tgt) {
+void send_full_edge (uint64_t src,uint64_t tgt) {
 	int pe=VERTEX_OWNER(src);
 	int vloc[3];
 	vloc[0]=VERTEX_LOCAL(src);
@@ -77,7 +77,7 @@ void convert_graph_to_oned_csr(const tuple_graph* const tg, oned_csr_graph* cons
 
 	size_t i;
 
-	int64_t nvert=tg->nglobaledges/2;
+	uint64_t nvert=tg->nglobaledges/2;
 	nvert/=num_pes();
 	nvert+=1;
 	degrees=xcalloc(nvert,sizeof(int));
@@ -87,8 +87,8 @@ void convert_graph_to_oned_csr(const tuple_graph* const tg, oned_csr_graph* cons
 	ITERATE_TUPLE_GRAPH_BEGIN(tg, buf, bufsize,wbuf) {
 		ptrdiff_t j;
 		for (j = 0; j < bufsize; ++j) {
-			int64_t v0 = get_v0_from_edge(&buf[j]);
-			int64_t v1 = get_v1_from_edge(&buf[j]);
+			uint64_t v0 = get_v0_from_edge(&buf[j]);
+			uint64_t v1 = get_v1_from_edge(&buf[j]);
 			if(v0==v1) continue;
 			send_half_edge(v0, v1);
 			send_half_edge(v1, v0);
@@ -96,7 +96,7 @@ void convert_graph_to_oned_csr(const tuple_graph* const tg, oned_csr_graph* cons
 		aml_barrier();
 	} ITERATE_TUPLE_GRAPH_END;
 
-	int64_t nglobalverts = 0;
+	uint64_t nglobalverts = 0;
 	aml_long_allmax(&nverts_known);
 	nglobalverts=nverts_known+1;
 	g->nglobalverts = nglobalverts;
@@ -142,7 +142,7 @@ void convert_graph_to_oned_csr(const tuple_graph* const tg, oned_csr_graph* cons
 	size_t nlocaledges = rowstarts[nlocalverts];
 	g->nlocaledges = nlocaledges;
 
-	int64_t colalloc = BYTES_PER_VERTEX*nlocaledges;
+	uint64_t colalloc = BYTES_PER_VERTEX*nlocaledges;
 	colalloc += (4095);
 	colalloc /= 4096;
 	colalloc *= 4096;
@@ -161,8 +161,8 @@ void convert_graph_to_oned_csr(const tuple_graph* const tg, oned_csr_graph* cons
 	ITERATE_TUPLE_GRAPH_BEGIN(tg, buf, bufsize,wbuf) {
 		ptrdiff_t j;
 		for (j = 0; j < bufsize; ++j) {
-			int64_t v0 = get_v0_from_edge(&buf[j]);
-			int64_t v1 = get_v1_from_edge(&buf[j]);
+			uint64_t v0 = get_v0_from_edge(&buf[j]);
+			uint64_t v1 = get_v1_from_edge(&buf[j]);
 			if(v0==v1) continue;
 #ifdef SSSP
 			send_full_edge(v0, v1,wbuf[j]);

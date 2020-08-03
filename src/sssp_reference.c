@@ -17,14 +17,14 @@
 #include <string.h>
 
 #ifdef DEBUGSTATS
-extern int64_t nbytes_sent,nbytes_rcvd;
+extern uint64_t nbytes_sent,nbytes_rcvd;
 #endif
 // variables shared from bfs_reference
 extern oned_csr_graph g;
 extern int qc,q2c;
 extern int* q1,*q2;
 extern int* rowstarts;
-extern int64_t* column, visited_size;
+extern uint64_t* column, visited_size;
 extern vertex_label_t *pred_glob;
 extern unsigned long * visited;
 #ifdef SSSP
@@ -63,7 +63,7 @@ void relaxhndl(int from, void* dat, int sz) {
 }
 
 //Sending relaxation active message
-void send_relax(int64_t glob, float weight,int fromloc) {
+void send_relax(uint64_t glob, float weight,int fromloc) {
 	relaxmsg m = {weight,VERTEX_LOCAL(glob),fromloc};
 	aml_send(&m,1,sizeof(relaxmsg),VERTEX_OWNER(glob));
 }
@@ -94,7 +94,7 @@ void run_sssp(vertex_label_t root, vertex_label_t* pred, float *dist) {
 	sum=1;
 
 #ifdef DEBUGSTATS
-	int64_t lastvisited=1;
+	uint64_t lastvisited=1;
 #endif
 
 	while(sum!=0) {
@@ -134,7 +134,7 @@ void run_sssp(vertex_label_t root, vertex_label_t* pred, float *dist) {
 		qc=0;sum=0;
 
 		//3. Bucket processing and checking termination condition
-		int64_t lvlvisited=0;
+		uint64_t lvlvisited=0;
 		for(i=0;i<g.nlocalverts;i++)
 			if(dist[i]>=glob_mindelta) {
 				sum++; //how many are still to be processed

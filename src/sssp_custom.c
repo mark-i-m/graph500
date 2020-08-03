@@ -6,7 +6,7 @@
 #include "bitmap_reference.h"
 
 extern oned_csr_graph g;
-extern int64_t* column,*pred_glob,visited_size;
+extern uint64_t* column,*pred_glob,visited_size;
 extern unsigned long * visited;
 
 #ifdef SSSP
@@ -17,7 +17,7 @@ extern unsigned long * visited;
 //pred array should point to next vertie in shortest path or -1 if vertex unreachable
 //pred[VERTEX_LOCAL(root)] should be root and dist should be 0.0
 
-void run_sssp(int64_t root,int64_t* pred,float *dist) {
+void run_sssp(uint64_t root,uint64_t* pred,float *dist) {
 	pred_glob=pred;
 	//user code for SSSP
 }

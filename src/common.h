@@ -41,16 +41,16 @@ static const int ulong_bits = sizeof(unsigned long) * CHAR_BIT;
 
 #define VERTEX_OWNER(v) ((int)(MOD_SIZE(v)))
 #define VERTEX_LOCAL(v) ((size_t)(DIV_SIZE(v)))
-#define VERTEX_TO_GLOBAL(r, i) ((int64_t)(MUL_SIZE((uint64_t)((i))) + (int)((r))))
+#define VERTEX_TO_GLOBAL(r, i) ((uint64_t)(MUL_SIZE((uint64_t)((i))) + (int)((r))))
 
 typedef struct tuple_graph {
 	int data_in_file; /* 1 for file, 0 for memory */
 	int write_file; /* 1 if the file needs written, 0 if re-used and read */
 	packed_edge* restrict edgememory; /* NULL if edges are in file */
-	int64_t edgememory_size;
-	int64_t max_edgememory_size;
+	uint64_t edgememory_size;
+	uint64_t max_edgememory_size;
 	MPI_File edgefile; /* Or MPI_FILE_NULL if edges are in memory */
-	int64_t nglobaledges; /* Number of edges in graph, in both cases */
+	uint64_t nglobaledges; /* Number of edges in graph, in both cases */
 #ifdef SSSP
 	float* restrict weightmemory;
 	MPI_File weightfile;
@@ -77,7 +77,7 @@ typedef struct tuple_graph {
 		MPI_Offset block_idx; \
 		packed_edge* edge_data_from_file = (packed_edge*)((tg)->data_in_file ? xmalloc(FILE_CHUNKSIZE * sizeof(packed_edge)) : NULL); \
 		float* weight_data_from_file = (float*)((tg)->data_in_file ? xmalloc(FILE_CHUNKSIZE * sizeof(float)) : NULL); \
-		int64_t edge_count_i = (int64_t)(-1); \
+		uint64_t edge_count_i = (uint64_t)(-1); \
 		if ((tg)->data_in_file && block_limit > 0) { \
 			MPI_Offset start_edge_index = FILE_CHUNKSIZE * rank; \
 			if (start_edge_index > (tg)->nglobaledges) start_edge_index = (tg)->nglobaledges; \
@@ -125,7 +125,7 @@ typedef struct tuple_graph {
 						/* fprintf(stderr, "%d has block_limit = %td\n", rank, (ptrdiff_t)block_limit); */ \
 						MPI_Offset block_idx; \
 						packed_edge* edge_data_from_file = (packed_edge*)((tg)->data_in_file ? xmalloc(FILE_CHUNKSIZE * sizeof(packed_edge)) : NULL); \
-						int64_t edge_count_i = (int64_t)(-1); \
+						uint64_t edge_count_i = (uint64_t)(-1); \
 						if ((tg)->data_in_file && block_limit > 0) { \
 							MPI_Offset start_edge_index = FILE_CHUNKSIZE * rank; \
 							if (start_edge_index > (tg)->nglobaledges) start_edge_index = (tg)->nglobaledges; \
@@ -207,7 +207,7 @@ typedef struct tuple_graph {
 
 
 
-					static inline int64_t tuple_graph_max_bufsize(const tuple_graph* tg) {
+					static inline uint64_t tuple_graph_max_bufsize(const tuple_graph* tg) {
 						return FILE_CHUNKSIZE;
 					}
 
@@ -217,7 +217,7 @@ typedef struct tuple_graph {
 
 						void setup_globals(void); /* In utils.c */
 						void cleanup_globals(void); /* In utils.c */
-						int lg_int64_t(int64_t x); /* In utils.c */
+						int lg_int64_t(uint64_t x); /* In utils.c */
 						void* xMPI_Alloc_mem(size_t nbytes); /* In utils.c */
 						void* xmalloc(size_t nbytes); /* In utils.c */
 						void* xcalloc(size_t n, size_t unit); /* In utils.c */
@@ -225,14 +225,14 @@ typedef struct tuple_graph {
 						int validate_result(int isbfs, const tuple_graph* const tg,
 								const size_t nlocalverts, const vertex_label_t root,
 								vertex_label_t* const pred, float * dist,
-								int64_t* const edge_visit_count_ptr); /* In validate.c */
+								uint64_t* const edge_visit_count_ptr); /* In validate.c */
 
 						/* Definitions in each BFS file, using static global variables for internal
 						 * storage: */
 						void make_graph_data_structure(const tuple_graph* const tg);
 						void free_graph_data_structure(void);
 						void run_bfs(vertex_label_t root, vertex_label_t* pred);
-						void get_edge_count_for_teps(int64_t* edge_visit_count);
+						void get_edge_count_for_teps(uint64_t* edge_visit_count);
 						void clean_pred(vertex_label_t* pred);
 						size_t get_nlocalverts_for_pred(void);
 						/* Definitions in SSSP file in case this kernel is implemented */
@@ -249,7 +249,7 @@ typedef struct tuple_graph {
 							return a < b ? a : b;
 						}
 
-						static inline int64_t int64_min(int64_t a, int64_t b) {
+						static inline uint64_t int64_min(uint64_t a, uint64_t b) {
 							return a < b ? a : b;
 						}
 

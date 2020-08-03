@@ -27,9 +27,9 @@
 #include "utils.h"
 
 #ifndef GRAPH_GENERATOR_MPI
-void make_graph(int log_numverts, int64_t M, uint64_t userseed1, uint64_t userseed2, int64_t* nedges_ptr_in, packed_edge** result_ptr_in) {
+void make_graph(int log_numverts, uint64_t M, uint64_t userseed1, uint64_t userseed2, uint64_t* nedges_ptr_in, packed_edge** result_ptr_in) {
   /* Add restrict to input pointers. */
-  int64_t* restrict nedges_ptr = nedges_ptr_in;
+  uint64_t* restrict nedges_ptr = nedges_ptr_in;
   packed_edge* restrict* restrict result_ptr = result_ptr_in;
 
   /* Spread the two 64-bit numbers into five nonzero values in the correct
@@ -51,13 +51,13 @@ void make_graph(int log_numverts, int64_t M, uint64_t userseed1, uint64_t userse
  * users, and creates a vector of doubles in a reproducible (and
  * random-access) way. */
 void make_random_numbers(
-       /* in */ int64_t nvalues    /* Number of values to generate */,
+       /* in */ uint64_t nvalues    /* Number of values to generate */,
        /* in */ uint64_t userseed1 /* Arbitrary 64-bit seed value */,
        /* in */ uint64_t userseed2 /* Arbitrary 64-bit seed value */,
-       /* in */ int64_t position   /* Start index in random number stream */,
+       /* in */ uint64_t position   /* Start index in random number stream */,
        /* out */ double* result    /* Returned array of values */
 ) {
-  int64_t i;
+  uint64_t i;
   uint_fast32_t seed[5];
   make_mrg_seed(userseed1, userseed2, seed);
 

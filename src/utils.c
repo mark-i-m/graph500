@@ -57,7 +57,7 @@ void cleanup_globals(void) {
 	MPI_Type_free(&packed_edge_mpi_type);
 }
 
-int lg_int64_t(int64_t x) { /* Round up */
+int lg_int64_t(uint64_t x) { /* Round up */
 	assert (x > 0);
 	--x;
 	int result = 0;

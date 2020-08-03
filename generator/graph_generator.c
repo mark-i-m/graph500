@@ -127,7 +127,7 @@ static inline uint64_t bitreverse(uint64_t x) {
 
 /* Apply a permutation to scramble vertex numbers; a randomly generated
  * permutation is not used because applying it at scale is too expensive. */
-static inline int64_t scramble(int64_t v0, int lgN, uint64_t val0, uint64_t val1) {
+static inline uint64_t scramble(uint64_t v0, int lgN, uint64_t val0, uint64_t val1) {
   uint64_t v = (uint64_t)v0;
   v += val0 + val1;
   v *= (val0 | UINT64_C(0x4519840211493211));
@@ -136,13 +136,13 @@ static inline int64_t scramble(int64_t v0, int lgN, uint64_t val0, uint64_t val1
   v *= (val1 | UINT64_C(0x3050852102C843A5));
   v = (bitreverse(v) >> (64 - lgN));
   assert ((v >> lgN) == 0);
-  return (int64_t)v;
+  return (uint64_t)v;
 }
 
 /* Make a single graph edge using a pre-set MRG state. */
 static
-void make_one_edge(int64_t nverts, int level, int lgN, mrg_state* st, packed_edge* result, uint64_t val0, uint64_t val1) {
-  int64_t base_src = 0, base_tgt = 0;
+void make_one_edge(uint64_t nverts, int level, int lgN, mrg_state* st, packed_edge* result, uint64_t val0, uint64_t val1) {
+  uint64_t base_src = 0, base_tgt = 0;
   while (nverts > 1) {
     int square = generate_4way_bernoulli(st, level, lgN);
     int src_offset = square / 2;
@@ -173,15 +173,15 @@ void make_one_edge(int64_t nverts, int level, int lgN, mrg_state* st, packed_edg
 void generate_kronecker_range(
        const uint_fast32_t seed[5] /* All values in [0, 2^31 - 1), not all zero */,
        int logN /* In base 2 */,
-       int64_t start_edge, int64_t end_edge,
+       uint64_t start_edge, uint64_t end_edge,
        packed_edge* edges
 #ifdef SSSP
        , float* weights
 #endif
        ) {
   mrg_state state;
-  int64_t nverts = (int64_t)1 << logN;
-  int64_t ei;
+  uint64_t nverts = (uint64_t)1 << logN;
+  uint64_t ei;
 
   mrg_seed(&state, seed);
 

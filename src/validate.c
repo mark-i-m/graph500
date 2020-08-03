@@ -28,7 +28,7 @@
 
 #ifdef REUSE_CSR_FOR_VALIDATION
 #include "csr_reference.h"
-extern int64_t* column;
+extern uint64_t* column;
 extern unsigned int* rowstarts;
 #ifdef SSSP
 extern float* weights;
@@ -42,18 +42,18 @@ int firstvalidationrun=1;
 int validatingbfs=0;
 
 unsigned int *vdegrees,*vrowstarts;
-int64_t *vcolumn;
+uint64_t *vcolumn;
 #ifdef SSSP
 float* vweights;
 #endif
 vertex_label_t *globpred;
-int64_t nedges_traversed;
+uint64_t nedges_traversed;
 float *globdist,prevlevel;
-int64_t val_errors=0;
+uint64_t val_errors=0;
 int failedtovalidate=0;
-int64_t newvisits;
+uint64_t newvisits;
 int * confirmed=NULL;
-int64_t maxvertex;
+uint64_t maxvertex;
 
 void frompredhndl(int from,void* data,int sz) {
 	int vfrom = *(int*)data;
@@ -72,7 +72,7 @@ void send_frompred (int vfrom,vertex_label_t src) {
 void vhalfedgehndl(int from,void* data,int sz)
 {  vdegrees[*(int*)data]++; }
 
-void send_half (int64_t src) {
+void send_half (uint64_t src) {
 	int pe=VERTEX_OWNER(src);
 	int vloc=VERTEX_LOCAL(src);
 	aml_send(&vloc,1,4,pe);
@@ -80,7 +80,7 @@ void send_half (int64_t src) {
 
 void vfulledgehndl(int frompe,void* data,int sz) {
 	int vloc = *(int*)data;
-	int64_t gtgt = *((int64_t*)(data+4));
+	uint64_t gtgt = *((uint64_t*)(data+4));
 	int next = vdegrees[vloc]++;
 	SETCOLUMN(next,gtgt);
 #ifdef SSSP
@@ -88,7 +88,7 @@ void vfulledgehndl(int frompe,void* data,int sz) {
 #endif
 }
 
-void vsend_full_edge (int64_t src,int64_t tgt,float w) {
+void vsend_full_edge (uint64_t src,uint64_t tgt,float w) {
 	int pe=VERTEX_OWNER(src);
 	int vloc[4];
 	vloc[0]=VERTEX_LOCAL(src);
@@ -179,7 +179,7 @@ void makedepthmapforbfs(const size_t nlocalverts,const vertex_label_t root,verte
 
 int validate_result(int isbfs,const tuple_graph* const tg, const size_t nlocalverts,
 		const vertex_label_t root, vertex_label_t* const pred, float* dist,
-		int64_t *nedges_in)
+		uint64_t *nedges_in)
 {
 	validatingbfs=isbfs;
 
