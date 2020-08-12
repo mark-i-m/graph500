@@ -92,7 +92,7 @@ xmalloc_large (size_t sz)
   large_alloc[which].p = NULL;
   large_alloc[which].fd = -1;
   out = mmap (NULL, sz, PROT_READ|PROT_WRITE,
-	      MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB|MAP_POPULATE, 0, 0);
+	      MAP_PRIVATE|MAP_ANONYMOUS|MAP_POPULATE, 0, 0);
   if (out == MAP_FAILED || !out) {
     perror ("mmap failed");
     abort ();
